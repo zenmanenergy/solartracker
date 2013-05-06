@@ -1,10 +1,9 @@
 var App=function(){
 	var self=this;
-	this.port=8069;
-	this.name='ZombieTag';
+	this.port=8080;
+	this.name='ZenmanEnergy';
 	
 	var express = require('express');
-	var mySQLClient = require('./mySQLClient.js');
 	
 	
 	var app = express.createServer();
@@ -27,13 +26,7 @@ var App=function(){
 	    // connection on large fragmented messages
 	    fragmentOutgoingMessages: false
 	});
-	var games={}
-	var players={}
-	var boundaries=new Boundaries(mySQLClient);
 	
-	var connections = {};
-	var connectionIDCounter = 1000;
-	var broadcastHistory=[];
 	
 	console.log("Zenman Server ready");
 }
