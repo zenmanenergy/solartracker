@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<widget xmlns		= "http://www.w3.org/ns/widgets"
+	xmlns:gap	= "http://phonegap.com/ns/1.0"
+	id		= "org.zenmanenergy.control.remote"
+	version 	= "1.0.0"
+	versionCode = "1">
+
+	<name>Solar Remote Control</name>
+
+	<description>
+		This remotely controls a zenman power plant 
+	</description>
+
+	<author href="http://www.zenmanenergy.org"
+		email="snelson@zenmanenergy.org">
+		Zenman Energy
+	</author>
+
+	<gap:platforms>
+		<gap:platform name="ios" />
+		<gap:platform name="android" minVersion="2.1" />
+	</gap:platforms>
+
+	
+
+	<preference name="target-device" value="universal" />
+	<preference name="phonegap-version" value="2.3.0" />
+	<preference name="fullscreen" value="true" />
+	
+	<access origin="*"/>
+	
+	
+</widget>

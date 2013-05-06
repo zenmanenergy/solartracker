@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>jQuery Mobile Demos</title>
+	<link rel="stylesheet"  href="css/themes/default/jquery.mobile-1.3.0.css">
+	<script src="cordova-2.3.0.js"></script>
+	<script src="js/jquery.js"></script>
+	<script src="js/jquery.mobile-1.3.0.js"></script>
+	<style>
+		.containing-element .ui-slider-switch { width: 15em; }
+	</style>
+</head>
+<body>
+	
+	<div data-role="page" id="settings">
+	<div data-role="panel" id="leftpanel1" data-position="left" data-display="reveal" data-theme="a">
+	  <ul data-role="listview">
+	    <li data-role="list-divider">Reflectors</li>
+	    <li><a href="#reflectorLogData">Log Data</a></li>
+	    <li><a href="#reflectorControl">Manual Control</a></li>
+	    <li><a href="#settings">Settings</a></li>
+	</ul>
+	</div>
+	<div data-role="header" data-position="fixed">
+		<h1>Settings</h1>
+		
+		<a href="#leftpanel1" data-icon="bars" class="ui-btn-left" data-iconpos="notext"></a>
+	   
+	</div><!-- /header -->
+
+	<div data-role="content">
+		<form>
+		     <label for="text-1">Microcontroller IP address:</label>
+		     <input type="text" name="microcontrollerIP" id="microcontrollerIP" value="">
+		     <input type="button" onclick="saveSettings()" value="Save" data-icon="check" data-theme="b">
+
+		</form>
+
+	</div>
+
+	
+</div>
+<script>
+	IPaddress=getCookie(microcontrollerIP)
+	var IPaddress;
+	function loadIP(){
+		
+		$("#microcontrollerIP").val(IPaddress);
+	}
+	
+	function saveSettings(){
+		setCookie(microcontrollerIP,$("#microcontrollerIP").val(),100)
+		IPaddress=$("#microcontrollerIP").val();
+	}
+	function setCookie(c_name,value,exdays)
+	{
+		var exdate=new Date();
+		exdate.setDate(exdate.getDate() + exdays);
+		var c_value=escape(value) + ((exdays==null) ? "" : "; expires="+exdate.toUTCString());
+		document.cookie=c_name + "=" + c_value;
+	}
+	function getCookie(c_name)
+	{
+		var i,x,y,ARRcookies=document.cookie.split(";");
+		for (i=0;i<ARRcookies.length;i++)
+		{
+			x=ARRcookies[i].substr(0,ARRcookies[i].indexOf("="));
+			y=ARRcookies[i].substr(ARRcookies[i].indexOf("=")+1);
+			x=x.replace(/^\s+|\s+$/g,"");
+			if (x==c_name)
+			{
+				return unescape(y);
+			}
+		}
+	}
+</script>
+
+<div data-role="page" id="reflectorLogData">
+	<div data-role="panel" id="leftpanel1" data-position="left" data-display="reveal" data-theme="a">
+	  <ul data-role="listview">
+	    <li data-role="list-divider">Reflectors</li>
+	    <li><a href="#reflectorLogData">Log Data</a></li>
+	    <li><a href="#reflectorControl">Manual Control</a></li>
+	    <li><a href="#settings">Settings</a></li>
+	</ul>
+	</div>
+	<div data-role="header" data-position="fixed">
+		<h1>Log Data</h1>
+		
+		<a href="#leftpanel1" data-icon="bars" class="ui-btn-left" data-iconpos="notext"></a>
+	   
+	</div><!-- /header -->
+
+	<div data-role="content" id="reflectorLogs">
+	</div>
+
+	
+</div>
+<script>
+	
+	var serverSettings;
+	$(function(){
+		loadPhotoData();
+		loadIP();
+		$("#reflectorLogData").on("pagebeforeshow",function(event,ui){
+			loadPhotoData();
+		})
+		$("#reflectorControl").on("pagebeforeshow",function(event,ui){
+			loadAuto()
+		})
+		
+		function loadPhotoData(){
+			var photoData
+			$.ajax({
+			  url: "http://"+IPaddress+"/log.txt",
+			   cache: false
+			}).done(function ( data ) {
+				logData=eval("["+data.substring(1, data.length)+"]");
+			  
+			  
+			  var log={}
+				for (var i=0; i < logData.length; i++){
+					if (!log[logData[i].method]){
+						log[logData[i].method]=[]
+					}
+					log[logData[i].method].push(logData[i])
+				}
+				
+				var html="";
+				for (var method in log){
+					html += "<h2>" + method + " (" + log[method].length + ")</h2>";
+					html += JSON.stringify((log[method]))
+				}
+				$('#reflectorLogs').html(html);
+				setTimeout(loadPhotoData,10000);
+			});
+			
+		}
+		function loadAuto(){
+			$.ajax({
+			  url: "http://"+IPaddress+"/settings.js"
+			}).done(function ( data ) {
+				console.log()
+				if (serverSettings.isAutomatic){
+					$('#manualControl').val('Auto').slider("refresh");
+				}else{
+					$('#manualControl').val('Manual').slider("refresh");
+				}
+			});
+		}
+	});
+</script>
+
+<script>
+	function changeAutoManual(){
+		if ($('#manualControl').val() == "Auto"){
+			$('#manualButtons').hide();
+			$.ajax({
+			  url: "http://"+IPaddress+"/isAutomatic.zen"
+			});
+		}else{
+			$('#manualButtons').show();
+			$.ajax({
+			  url: "http://"+IPaddress+"/isManual.zen"
+			});
+		}
+	}
+	function clockwise(){
+		$.ajax({
+		  url: "http://"+IPaddress+"/clockwise.zen"
+		});
+	}
+	function counterclockwise(){
+		$.ajax({
+		  url: "http://"+IPaddress+"/counterclockwise.zen"
+		});
+	}
+</script>
+<div data-role="page" id="reflectorControl">
+	<div data-role="panel" id="leftpanel1" data-position="left" data-display="reveal" data-theme="a">
+	  <ul data-role="listview">
+	    <li data-role="list-divider">Reflectors</li>
+	    <li><a href="#reflectorLogData">Log Data</a></li>
+	    <li><a href="#reflectorControl">Manual Control</a></li>
+	    <li><a href="#settings">Settings</a></li>
+	</ul>
+	</div>
+	<div data-role="header" data-position="fixed">
+		<h1>Reflector Control</h1>
+		
+		<a href="#leftpanel1" data-icon="bars" class="ui-btn-left" data-iconpos="notext"></a>
+	   
+	</div><!-- /header -->
+
+	<div data-role="content">
+		<h1>Manual or Automatic control:</h1>
+		<form>
+		    <select name="manualControl" id="manualControl" data-role="slider" onchange="changeAutoManual();">
+		        <option value="Auto">Auto</option>
+		        <option value="Manual">Manual</option>
+		    </select>
+		   
+		</form>
+		<div id="manualButtons" style="display:none;">
+			<a onclick="counterclockwise()" data-role="button" data-icon="back" data-iconpos="left" data-inline="true">Rotate Motor Counter Clockwise</a>
+			<a onclick="clockwise()" data-role="button" data-icon="forward" data-iconpos="right" data-inline="true">Rotate Motor Clockwise</a>
+		</div>
+	</div>
+
+	
+</div>
+
+</body>
+</html>
