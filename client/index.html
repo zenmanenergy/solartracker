@@ -14,45 +14,110 @@
 </head>
 <body>
 	
-	<div data-role="page" id="settings">
-	<div data-role="panel" id="leftpanel1" data-position="left" data-display="reveal" data-theme="a">
-	  <ul data-role="listview">
-	    <li data-role="list-divider">Reflectors</li>
-	    <li><a href="#reflectorLogData">Log Data</a></li>
-	    <li><a href="#reflectorControl">Manual Control</a></li>
-	    <li><a href="#settings">Settings</a></li>
-	</ul>
-	</div>
+<div data-role="page" id="mcontrollers">
+
 	<div data-role="header" data-position="fixed">
-		<h1>Settings</h1>
+		<h1>Select a Microcontoller</h1>
 		
 		<a href="#leftpanel1" data-icon="bars" class="ui-btn-left" data-iconpos="notext"></a>
 	   
-	</div><!-- /header -->
-
-	<div data-role="content">
-		<form>
-		     <label for="text-1">Microcontroller IP address:</label>
-		     <input type="text" name="microcontrollerIP" id="microcontrollerIP" value="">
-		     <input type="button" onclick="saveSettings()" value="Save" data-icon="check" data-theme="b">
-
-		</form>
-
 	</div>
 
+	<div data-role="content">
+		
+		<ul id="microcontrollers" data-role="listview">
+		 
+		</ul>
+	</div>
+	
 	
 </div>
 <script>
-	IPaddress=getCookie(microcontrollerIP)
+	//IPaddress=getCookie(microcontrollerIP)
 	var IPaddress;
+	var servers={}
+	var server;
+	var baseIP="127.0.0.";
+	var port="8080"
+	function autoFind(){
+		$.mobile.loading( 'show', {
+			text: "Searching for microcontrollers",
+			textVisible: true,
+			theme: "b",
+			textonly: false,
+			html: ""
+		});
+		for (var i=1;i<255;i++){
+			$.ajax({
+				url: "http://"+baseIP+i+":"+port+"/connect"
+				,timeout:1000
+				,error: function(x, t, m) {
+		 		if(t==="timeout") {
+					console.log("got timeout");
+				}
+			}
+			}).done(function ( data ) {
+				servers[data.host]=data;
+				console.log(data)
+				
+			});
+		}
+		setTimeout(function(){
+			$.mobile.loading( 'hide');
+			listControllers();
+		},2000);
+	}
+	function listControllers(){
+		
+		var count=0;
+		var microcontrollersHTML=""
+		console.log($('#microcontrollers'))
+		$('#microcontrollers').listview({create: function( event, ui ) {}})
+		$('#microcontrollers').empty();
+		for (var ip in servers){
+			count++;
+			microcontrollersHTML+="<li><a href='javascript:connectTo(\""+ip+"\")'>"+ip+"</a></li>";
+			
+		}
+		$('#microcontrollers').html(microcontrollersHTML);
+		
+		$('#microcontrollers').listview( "refresh" );
+		
+		//console.log(microcontrollersHTML)
+		//$( "#microcontrollersUL" ).listview();
+		//$( "#microcontrollersUL" ).html(microcontrollersHTML);
+		//$( "#microcontrollersUL" ).listview( "refresh" );
+		console.log($( "#microcontrollersUL"))
+		if (count==0){
+			alert("Didn't find any. I checked:\n"+baseIP+"1 - "+baseIP+"255")
+		}else{
+			
+			
+		}
+	}
+	function connectTo(ip){
+		server=servers[ip];
+		$('#longitude').val(server.longitude)
+		$('#latitude').val(server.latitude)
+		
+		$.mobile.changePage( "#settings", { transition: "slideup" });
+		
+	}
 	function loadIP(){
 		
 		$("#microcontrollerIP").val(IPaddress);
 	}
 	
 	function saveSettings(){
-		setCookie(microcontrollerIP,$("#microcontrollerIP").val(),100)
-		IPaddress=$("#microcontrollerIP").val();
+		
+		//setCookie(microcontrollerIP,$("#microcontrollerIP").val(),100)
+		//IPaddress=$("#microcontrollerIP").val();
+		$.ajax({
+			  url: "http://"+server.host+"/saveSettings?longitude="+ $('#longitude').val() + "&latitude="+$('#latitude').val()
+			}).done(function ( data ) {
+				console.log(data)
+				
+			});
 	}
 	function setCookie(c_name,value,exdays)
 	{
@@ -76,7 +141,44 @@
 		}
 	}
 </script>
+<div data-role="page" id="settings">
+	<div data-role="panel" id="leftpanel1" data-position="left" data-display="reveal" data-theme="a">
+	  <a href="javascript:location.href='index.html';" data-role="button">Disconnect</a>
+	  <BR/>
+	  <ul data-role="listview">
+	    <li data-role="list-divider">Reflectors</li>
+	    <li><a href="#reflectorLogData">Log Data</a></li>
+	    <li><a href="#reflectorControl">Manual Control</a></li>
+	    <li><a href="#settings">Settings</a></li>
+	</ul>
+	</div>
+	<div data-role="header" data-position="fixed">
+		<h1>Settings</h1>
+		
+		<a href="#leftpanel1" data-icon="bars" class="ui-btn-left" data-iconpos="notext"></a>
+	   
+	</div><!-- /header -->
 
+	<div data-role="content">
+		
+		<form>
+		     <label for="text-1">Longitude:</label>
+		     <input type="text" name="longitude" id="longitude" value="">
+		     <label for="text-1">Latitude:</label>
+		     <input type="text" name="latitude" id="latitude" value="">
+		     <input type="button" onclick="saveSettings()" value="Save" data-icon="check" data-theme="b">
+
+		</form>
+
+	</div>
+	
+	
+</div>
+<script>
+	function disconnect(){
+		$.mobile.changePage( "", { transition: "slideup" });
+	}
+</script>
 <div data-role="page" id="reflectorLogData">
 	<div data-role="panel" id="leftpanel1" data-position="left" data-display="reveal" data-theme="a">
 	  <ul data-role="listview">
@@ -101,9 +203,10 @@
 <script>
 	
 	var serverSettings;
-	$(function(){
-		loadPhotoData();
-		loadIP();
+	
+		/*
+		 * loadPhotoData();
+		
 		$("#reflectorLogData").on("pagebeforeshow",function(event,ui){
 			loadPhotoData();
 		})
@@ -150,7 +253,9 @@
 				}
 			});
 		}
-	});
+		
+		 */
+	//});
 </script>
 
 <script>
@@ -211,6 +316,10 @@
 
 	
 </div>
-
+<script>
+	$(function(){
+		autoFind()
+	});
+</script>
 </body>
 </html>
