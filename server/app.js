@@ -4,15 +4,39 @@ var App=function(){
 	
 	var express = require('express');
 	var app = express();
+	var fs = require('fs');
 	
-	app.get('/hello.txt', function(req, res){
-	  var body = 'Hello World';
-	  res.setHeader('Content-Type', 'text/plain');
-	  res.setHeader('Content-Length', body.length);
-	  res.end(body);
+	app.get('/connect', function(req, res){
+		console.log(req.headers.host)
+		var settings={}
+		settings.host=req.headers.host
+		settings.datetime=new Date()
+		
+		fs.readFile("./settings.json", 'utf8', function (err, data) {
+			if (err) {
+				console.log('Error: ' + err);
+				return;
+			}
+	 		data = JSON.parse(data);
+	 		settings.longitude=data.longitude
+			settings.latitude=data.latitude
+			var body = 'true';
+			res.header("Access-Control-Allow-Origin", "*");
+			res.contentType('application/json');
+			res.json(settings);
+		});
+	  
 	});
-	app.get('/hello2.txt', function(req, res){
-	  res.send('Hello World 2');
+	app.get('/saveSettings', function(req, res){
+		console.log(req.query)
+		fs.writeFile("./settings.json", JSON.stringify(req.query, null, 4), function(err) {
+		if(err) {
+			console.log(err);
+		} else {
+		console.log("JSON saved to ./settings.json");
+		}
+	}); 
+	  //res.send('Hello World 2');
 	});
 	app.listen(this.port);
 	console.log('Listening on port ' + this.port);
