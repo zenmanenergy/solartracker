@@ -8,6 +8,9 @@
 	<script src="cordova-2.3.0.js"></script>
 	<script src="js/jquery.js"></script>
 	<script src="js/jquery.mobile-1.3.0.js"></script>
+	
+	<script src="js/Sun.js"></script>
+	<script src="js/Reflector.js"></script>
 	<style>
 		.containing-element .ui-slider-switch { width: 15em; }
 	</style>
@@ -19,7 +22,6 @@
 	<div data-role="header" data-position="fixed">
 		<h1>Select a Microcontoller</h1>
 		
-		<a href="#leftpanel1" data-icon="bars" class="ui-btn-left" data-iconpos="notext"></a>
 	   
 	</div>
 
@@ -39,7 +41,13 @@
 	var server;
 	var baseIP="127.0.0.";
 	var port="8080"
+	var app={}
 	function autoFind(){
+		if (jQuery.mobile.path.get() !=''){
+			location.href="index.html";
+		}
+		
+		
 		$.mobile.loading( 'show', {
 			text: "Searching for microcontrollers",
 			textVisible: true,
@@ -47,6 +55,7 @@
 			textonly: false,
 			html: ""
 		});
+		app.choseController=false;
 		for (var i=1;i<255;i++){
 			$.ajax({
 				url: "http://"+baseIP+i+":"+port+"/connect"
@@ -57,26 +66,31 @@
 				}
 			}
 			}).done(function ( data ) {
+				console.log('done')
 				servers[data.host]=data;
 				console.log(data)
 				
 			});
 		}
 		setTimeout(function(){
-			$.mobile.loading( 'hide');
-			listControllers();
+			console.log('timeout')
+			if (!app.choseController){
+				$.mobile.loading( 'hide');
+				listControllers();
+			}
 		},2000);
 	}
 	function listControllers(){
+		console.log('listControllers')
 		
 		var count=0;
 		var microcontrollersHTML=""
 		console.log($('#microcontrollers'))
-		$('#microcontrollers').listview({create: function( event, ui ) {}})
+		$('#microcontrollers').listview({create: function( event, ui ) {console.log('create!')}})
 		$('#microcontrollers').empty();
 		for (var ip in servers){
 			count++;
-			microcontrollersHTML+="<li><a href='javascript:connectTo(\""+ip+"\")'>"+ip+"</a></li>";
+			microcontrollersHTML+="<li><a onclick='connectTo(\""+ip+"\")' href='#settings'>"+ip+"</a></li>";
 			
 		}
 		$('#microcontrollers').html(microcontrollersHTML);
@@ -96,25 +110,28 @@
 		}
 	}
 	function connectTo(ip){
+		console.log('connectt')
+		app.choseController=true;
 		server=servers[ip];
 		$('#longitude').val(server.longitude)
 		$('#latitude').val(server.latitude)
+		$('#datetime').val(server.datetime)
 		
-		$.mobile.changePage( "#settings", { transition: "slideup" });
+		//$.mobile.changePage( "#settings", { transition: "slidedown" });
 		
 	}
 	function loadIP(){
-		
+		console.log('loadIP')
 		$("#microcontrollerIP").val(IPaddress);
 	}
 	
 	function saveSettings(){
-		
+		console.log('saveSettings')
 		//setCookie(microcontrollerIP,$("#microcontrollerIP").val(),100)
 		//IPaddress=$("#microcontrollerIP").val();
 		$.ajax({
-			  url: "http://"+server.host+"/saveSettings?longitude="+ $('#longitude').val() + "&latitude="+$('#latitude').val()
-			}).done(function ( data ) {
+			url: "http://"+server.host+"/saveSettings?longitude="+ $('#longitude').val() + "&latitude="+$('#latitude').val()
+		}).done(function ( data ) {
 				console.log(data)
 				
 			});
@@ -147,8 +164,7 @@
 	  <BR/>
 	  <ul data-role="listview">
 	    <li data-role="list-divider">Reflectors</li>
-	    <li><a href="#reflectorLogData">Log Data</a></li>
-	    <li><a href="#reflectorControl">Manual Control</a></li>
+	    <li><a href="#sunposition">Sun Position</a></li>
 	    <li><a href="#settings">Settings</a></li>
 	</ul>
 	</div>
@@ -162,10 +178,12 @@
 	<div data-role="content">
 		
 		<form>
-		     <label for="text-1">Longitude:</label>
+		     <label for="longitude">Longitude:</label>
 		     <input type="text" name="longitude" id="longitude" value="">
-		     <label for="text-1">Latitude:</label>
+		     <label for="latitude">Latitude:</label>
 		     <input type="text" name="latitude" id="latitude" value="">
+		     <label for="datetime">Date/Time:</label>
+		     <input type="text" name="datetime" id="datetime" value="">
 		     <input type="button" onclick="saveSettings()" value="Save" data-icon="check" data-theme="b">
 
 		</form>
@@ -174,9 +192,45 @@
 	
 	
 </div>
+<div data-role="page" id="sunposition">
+	<div data-role="panel" id="leftpanel1" data-position="left" data-display="reveal" data-theme="a">
+	  <a href="javascript:location.href='index.html';" data-role="button">Disconnect</a>
+	  <BR/>
+	  <ul data-role="listview">
+	    <li data-role="list-divider">Reflectors</li>
+	    <li><a href="#sunposition">Sun Position</a></li>
+	    <li><a href="#settings">Settings</a></li>
+	</ul>
+	</div>
+	<div data-role="header" data-position="fixed">
+		<h1>Sun Position</h1>
+		
+		<a href="#leftpanel1" data-icon="bars" class="ui-btn-left" data-iconpos="notext"></a>
+	   
+	</div><!-- /header -->
+
+	<div data-role="content">
+		<!---<input type="Button" value="Start" onClick="start()">
+		<input type="Button" value="Stop" onclick="stop()">--->
+		<canvas id="SunStage" width="300" height="300" style="border:1px solid black; position: absolute;  z-index: 1;"></canvas>
+		<canvas id="ReflectorStage" width="100" height="100" style="border:1px solid black; position: absolute;  z-index: 2;"></canvas>
+	</div>
+	
+	
+</div>
 <script>
-	function disconnect(){
-		$.mobile.changePage( "", { transition: "slideup" });
+	function initSun(){
+		console.log('initSun')
+		app.sun=new Sun("SunStage");
+		app.sun.draw();
+	}
+	function initReflector(){
+		console.log('initReflector')
+		//app.reflector=initReflector()
+		app.reflector=new Reflector("ReflectorStage");
+		//app.reflector.setPointsParabola();
+		app.reflector.draw();
+		
 	}
 </script>
 <div data-role="page" id="reflectorLogData">
@@ -260,6 +314,7 @@
 
 <script>
 	function changeAutoManual(){
+		console.log('changeAutoManual')
 		if ($('#manualControl').val() == "Auto"){
 			$('#manualButtons').hide();
 			$.ajax({
@@ -273,11 +328,13 @@
 		}
 	}
 	function clockwise(){
+		console.log('clockwise')
 		$.ajax({
 		  url: "http://"+IPaddress+"/clockwise.zen"
 		});
 	}
 	function counterclockwise(){
+		console.log('counterclockwise')
 		$.ajax({
 		  url: "http://"+IPaddress+"/counterclockwise.zen"
 		});
@@ -318,7 +375,21 @@
 </div>
 <script>
 	$(function(){
-		autoFind()
+		console.log('$')
+		/*
+		 * 
+		autoFind();
+		
+		$("#sunposition").on("pagebeforeshow",function(event,ui){
+		console.log('pagebeforeshow')
+			initSun();
+		})
+		 */
+		
+		initSun();
+		initReflector();
+		$.mobile.changePage( "#sunposition", { transition: "slideup" });
+		
 	});
 </script>
 </body>
