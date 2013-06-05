@@ -39,9 +39,11 @@
 	var IPaddress;
 	var servers={}
 	var server;
-	var baseIP="127.0.0.";
+	//var baseIP=["127.0.0.","192.168.0.","192.168.1.","192.168.2.","192.168.3.","192.168.4.","192.168.5.","192.168.6.","192.168.7.","192.168.8.","192.168.9.","192.168.10."];
+	var baseIP=["192.168.1."];
 	var port="8080"
 	var app={}
+	var foundit=false;
 	function autoFind(){
 		if (jQuery.mobile.path.get() !=''){
 			location.href="index.html";
@@ -56,31 +58,40 @@
 			html: ""
 		});
 		app.choseController=false;
-		for (var i=1;i<255;i++){
-			$.ajax({
-				url: "http://"+baseIP+i+":"+port+"/connect"
-				,timeout:1000
-				,error: function(x, t, m) {
-		 		if(t==="timeout") {
-					console.log("got timeout");
-				}
-			}
-			}).done(function ( data ) {
-				console.log('done')
-				servers[data.host]=data;
-				console.log(data)
+		
+		for (var j=0; j < baseIP.length; j++){
+			for (var i=131;i<139;i++){
 				
-			});
+				console.log("http://"+baseIP[j]+i+":"+port+"/connect")
+				$.ajax({
+					url: "http://"+baseIP[j]+i+":"+port+"/connect"
+					,timeout:1000
+					,error: function(x, t, m) {
+			 		console.log(x.error())
+			 		//if(t==="timeout") {
+						//console.log("got timeout");
+					//}
+				}
+				}).done(function ( data ) {
+					console.log('FOUND IT!')
+					servers[data.host]=data;
+					console.log(servers)
+				});
+				
+			}
+			
 		}
 		setTimeout(function(){
 			console.log('timeout')
 			if (!app.choseController){
 				$.mobile.loading( 'hide');
-				listControllers();
+				listControllers(baseIP[j]);
 			}
 		},2000);
+		
+		
 	}
-	function listControllers(){
+	function listControllers(IP_Base){
 		console.log('listControllers')
 		
 		var count=0;
@@ -103,20 +114,35 @@
 		//$( "#microcontrollersUL" ).listview( "refresh" );
 		console.log($( "#microcontrollersUL"))
 		if (count==0){
-			alert("Didn't find any. I checked:\n"+baseIP+"1 - "+baseIP+"255")
+			//alert("Didn't find any. I checked:\n"+IP_Base+"1 - "+IP_Base+"255")
 		}else{
 			
 			
 		}
 	}
+	function updateLocation(){
+		alert('update')
+		var watchId = navigator.geolocation.watchPosition(
+				function (position) {
+					$('#longitude').val(position.coords.longitude);
+					$('#latitude').val(position.coords.latitude);
+					alert(position.coords.latitude);
+				}
+				,function (PositionError) { console.log(PositionError); alert('errr')}
+				,{frequency:5000,maximumAge: 30, timeout: 5000, enableHighAccuracy:true});
+		
+	}
 	function connectTo(ip){
-		console.log('connectt')
+		console.log('connect',ip)
 		app.choseController=true;
 		server=servers[ip];
 		$('#longitude').val(server.longitude)
 		$('#latitude').val(server.latitude)
 		$('#datetime').val(server.datetime)
-		
+		navigator.geolocation.getCurrentPosition(function(){
+			console.log('geo')
+		},function(){console.log('geofail')
+		});
 		//$.mobile.changePage( "#settings", { transition: "slidedown" });
 		
 	}
@@ -177,7 +203,8 @@
 
 	<div data-role="content">
 		
-		<form>
+		<form action="#">
+		     <input type="button" onclick="updateLocation()" value="Update Location" data-icon="star" data-theme="b">
 		     <label for="longitude">Longitude:</label>
 		     <input type="text" name="longitude" id="longitude" value="">
 		     <label for="latitude">Latitude:</label>
@@ -213,7 +240,7 @@
 		<!---<input type="Button" value="Start" onClick="start()">
 		<input type="Button" value="Stop" onclick="stop()">--->
 		<canvas id="SunStage" width="300" height="300" style="border:1px solid black; position: absolute;  z-index: 1;"></canvas>
-		<canvas id="ReflectorStage" width="100" height="100" style="border:1px solid black; position: absolute;  z-index: 2;"></canvas>
+		<canvas id="ReflectorStage" width="1000" height="1000" style="border:1px solid black; position: absolute;  z-index: 2;"></canvas>
 	</div>
 	
 	
@@ -228,9 +255,9 @@
 		console.log('initReflector')
 		//app.reflector=initReflector()
 		app.reflector=new Reflector("ReflectorStage");
-		//app.reflector.setPointsParabola();
+		app.reflector.setPoints();
+		app.reflector.rotatePoints(150,150,35);
 		app.reflector.draw();
-		
 	}
 </script>
 <div data-role="page" id="reflectorLogData">
@@ -375,20 +402,22 @@
 </div>
 <script>
 	$(function(){
-		console.log('$')
-		/*
-		 * 
+		
 		autoFind();
 		
+		
+		
+		/*
+		 * 
 		$("#sunposition").on("pagebeforeshow",function(event,ui){
 		console.log('pagebeforeshow')
 			initSun();
 		})
 		 */
 		
-		initSun();
-		initReflector();
-		$.mobile.changePage( "#sunposition", { transition: "slideup" });
+		//initSun();
+		//initReflector();
+		//$.mobile.changePage( "#sunposition", { transition: "slideup" });
 		
 	});
 </script>
