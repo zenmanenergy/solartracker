@@ -31,6 +31,7 @@ var App=function(){
 	});
 	app.get('/saveSettings', function(req, res){
 		console.log(req.query)
+		console.log(__dirname)
 		fs.writeFile("./settings.json", JSON.stringify(req.query, null, 4), function(err) {
 			if(err) {
 				console.log(err);
