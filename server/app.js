@@ -32,11 +32,11 @@ var App=function(){
 	app.get('/saveSettings', function(req, res){
 		console.log(req.query)
 		console.log(__dirname)
-		fs.writeFile("./settings.json", JSON.stringify(req.query, null, 4), function(err) {
+		fs.writeFile("/var/www/solartrackerData/settings.json", JSON.stringify(req.query, null, 4), function(err) {
 			if(err) {
 				console.log(err);
 			} else {
-			console.log("JSON saved to ./settings.json");
+				console.log("JSON saved to /var/www/solartrackerData/settings.json");
 			}
 		}); 
 	  //res.send('Hello World 2');
